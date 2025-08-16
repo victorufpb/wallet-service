@@ -1,7 +1,6 @@
 package com.wallet.application.web.controller.dto.request;
 
 import com.wallet.domain.entity.Transaction;
-import com.wallet.domain.enums.Action;
 import com.wallet.domain.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;

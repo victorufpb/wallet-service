@@ -1,6 +1,5 @@
 package com.wallet.domain.service;
 
-import com.wallet.domain.entity.PaginationFilter;
 import com.wallet.domain.entity.Transaction;
 import com.wallet.domain.entity.Transfer;
 import com.wallet.domain.entity.Wallet;
@@ -10,6 +9,8 @@ import com.wallet.domain.exception.WalletAlreadyExistsException;
 import com.wallet.domain.gateway.TransactionEventsGateway;
 import com.wallet.domain.gateway.WalletGateway;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import static com.wallet.domain.enums.TransactionType.WITHDRAW;
 
 @Service
 public class WalletService {
+    Logger logger = LoggerFactory.getLogger(WalletService.class);
 
     private final WalletGateway walletGateway;
     private final TransactionEventsGateway transactionEventsGateway;
@@ -28,7 +30,7 @@ public class WalletService {
 
     public Wallet create(Wallet wallet) throws WalletAlreadyExistsException {
         try {
-            System.out.println("creating wallet for user=" + wallet.getUserId());
+            logger.info("Creating new wallet for user_id={}", wallet.getUserId());
             return walletGateway.create(wallet);
         } catch (DataIntegrityViolationException e) {
             throw new WalletAlreadyExistsException("wallet already exists for user=" + wallet.getUserId());
@@ -38,14 +40,17 @@ public class WalletService {
     @Transactional
     public boolean makeTransaction(Transaction transaction) throws NotFoundException, InvalidAmountException {
         String userId = getWalletById(transaction.getWalletId()).getUserId();
-
         boolean result;
+
         if (transaction.getTransactionType() == WITHDRAW) {
             result = withdraw(transaction);
         } else {
             result = deposit(transaction);
         }
         addEvent(transaction, userId);
+
+        logger.info("Transaction made successfully");
+
         return result;
     }
 
@@ -63,10 +68,13 @@ public class WalletService {
         deposit(transactionReceived);
         addEvent(transactionReceived, targetWallet.getUserId());
 
+        logger.info("Transfer made successfully");
         return true;
     }
 
     public Wallet getWalletById(String id) throws NotFoundException {
+        logger.info("Getting wallet by id={}", id);
+
         Wallet wallet = walletGateway.getById(id);
         if (wallet == null) {
             throw new NotFoundException("Not found wallet for id="+id);

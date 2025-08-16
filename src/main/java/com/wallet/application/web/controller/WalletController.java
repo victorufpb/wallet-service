@@ -13,6 +13,9 @@ import com.wallet.domain.exception.NotFoundException;
 import com.wallet.domain.exception.WalletAlreadyExistsException;
 import com.wallet.domain.gateway.TransactionEventsGateway;
 import com.wallet.domain.service.WalletService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +25,7 @@ import java.time.LocalDate;
 @RequestMapping(value = "wallets")
 @RestController
 public class WalletController {
-
+    Logger logger = LoggerFactory.getLogger(WalletController.class);
     private final WalletService walletService;
     private final TransactionEventsGateway transactionEventsGateway;
 
@@ -33,11 +36,15 @@ public class WalletController {
 
     @PostMapping
     public ResponseEntity<Wallet> createUser(@RequestBody WalletRequest walletRequest) throws WalletAlreadyExistsException {
+        MDC.put("user_id", walletRequest.getUserId());
+        logger.info("Creating wallet for user_id={}", walletRequest.getUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(walletService.create(walletRequest.toDomain()));
     }
     
     @GetMapping(value = "/{id}")
     public ResponseEntity<Wallet> getWallet(@PathVariable String id) throws NotFoundException {
+        MDC.put("wallet_id", id);
+        logger.info("Fetching wallet for id={}", id);
 		return ResponseEntity.ok(walletService.getWalletById(id));
 
     }
@@ -47,6 +54,8 @@ public class WalletController {
             @PathVariable String id,
             @RequestBody TransactionRequest transactionRequest
     ) throws NotFoundException, InvalidAmountException {
+        MDC.put("wallet_id", id);
+        logger.info("Making transaction={} for id={}", transactionRequest.getTransactionType(), id);
         boolean updated = walletService.makeTransaction(transactionRequest.toDomain(id));
         return ResponseEntity.ok(new SuccessfulResponse(updated));
     }
@@ -56,6 +65,8 @@ public class WalletController {
             @PathVariable String id,
             @RequestBody TransferRequest  transferRequest
     ) throws InvalidAmountException, NotFoundException {
+        MDC.put("wallet_id", id);
+        logger.info("Making transfer from wallet_id={} to wallet_id={}", id, transferRequest.getTargetAccountId());
         boolean transferred = walletService.makeTransfer(transferRequest.toDomain(id));
         return ResponseEntity.ok(new SuccessfulResponse(transferred));
     }
@@ -68,6 +79,8 @@ public class WalletController {
             @RequestParam(name = "start_date", required = false) LocalDate startDate,
             @RequestParam(name = "end_date", required = false) LocalDate endDate
     ) throws NotFoundException {
+        MDC.put("wallet_id", id);
+        logger.info("Fetching wallet balance events for wallet_id={}", id);
         return ResponseEntity.ok(transactionEventsGateway.getTransactionEvents(id, new PaginationFilter(page, size, startDate, endDate)));
     }
 }

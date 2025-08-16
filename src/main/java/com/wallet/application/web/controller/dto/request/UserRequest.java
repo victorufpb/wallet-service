@@ -1,11 +1,11 @@
 package com.wallet.application.web.controller.dto.request;
 
-import com.wallet.application.util.IdGenerator;
 import com.wallet.domain.entity.User;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static com.wallet.application.util.IdGenerator.generateId;
 
